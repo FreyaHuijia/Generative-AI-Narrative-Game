@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whispers of the Enchanted Woods</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #4a4a4a;
+        }
+        #scene-image {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #response {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        form {
+            margin-top: 20px;
+        }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <h1>Whispers of the Enchanted Woods</h1>
+    <img id="scene-image" src="{{ url_for('static', filename='imgs/opening_scene.jpg') }}" alt="scene">
+    <div id="response">
+      As the sun begins to set, casting a golden hue over the landscape, you find yourself standing at the edge of the Whispering Woods—a magical forest known for its whimsical creatures and hidden secrets. The air is thick with the scent of blooming flowers and the soft hum of nature surrounds you, as if the forest itself is alive and beckoning you to explore. What do you want to do now?
+    </div>
+    <div id="loading" style="display: none;">
+        Exploring...
+    </div>
+    <form id="adventure-form" method="POST">
+        <input type="text" name="user_input" placeholder="what do you want to do now?" required>
+        <button type="submit">submit</button>
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#adventure-form').submit(function(e) {
+                e.preventDefault();
+                
+             // Display the loading indicator
+                $('#loading').show();
+                
+                // Disable the submit button
+                $('button[type="submit"]').prop('disabled', true);
+                
+                $.ajax({
+                    url: '/milestone1',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        $('#response').text(response.response);
+                        $('#scene-image').attr('src', response.image_url + '?t=' + new Date().getTime());
+                    },
+                    error: function() {
+                        $('#response').text('Error, please try again');
+                    },
+                    complete: function() {
+                        // Hide the loading indicator
+                        $('#loading').hide();
+                        
+                        // Re-enable the submit button
+                        $('button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
