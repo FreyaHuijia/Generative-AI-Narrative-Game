@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whispers of Wonder</title>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .scenarios {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .scenario {
+            width: 30%;
+            text-align: center;
+        }
+        .scenario img {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.3s ease, filter 0.3s ease;
+        }
+        .scenario:hover img {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+        input[type="radio"] {
+            display: none;
+        }
+        input[type="radio"]:checked + label img {
+            border: 4px solid #4CAF50;
+        }
+        .description {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 10px;
+            display: none;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .description.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        button {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+        button:hover::after {
+            width: 300px;
+            height: 300px;
+        }
+        .error-message {
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="{{ url_for('static', filename='js/background.js') }}"></script>
+</head>
+<body>
+    <h1>Whispers of Wonder</h1>
+    <h2>Select Your Adventure</h2>
+    <div id="error-message" class="error-message">
+        Please select an adventure type before proceeding.
+    </div>
+    <form action="{{ url_for('interaction_2') }}" method="post" id="adventure-form" onsubmit="return validateForm()">
+        <div class="scenarios">
+            {% for key, scene in scenarios.items() %}
+                <div class="scenario">
+                    <input type="radio" name="scenario" value="{{ key }}" id="{{ key }}">
+                    <label for="{{ key }}">
+                        <img src="{{ url_for('static', filename='imgs/' + key + '.jpg') }}" alt="{{ key }}">
+                    </label>
+                    <h2>{{ scene.description.split(' - ')[0] }}</h2>
+                </div>
+            {% endfor %}
+        </div>
+        {% for key, scene in scenarios.items() %}
+            <div id="{{ key }}-description" class="description">
+                <p>{{ scene.description.split(' - ')[1] }}</p>
+            </div>
+        {% endfor %}
+ 
+        <button type="submit">Start Your Adventure</button>
+    </form>
+
+    <script>
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.querySelectorAll('.description').forEach(desc => {
+                    desc.classList.remove('active');
+                    desc.style.display = 'none';
+                });
+                const description = document.getElementById(this.value + '-description');
+                description.style.display = 'block';
+                setTimeout(() => description.classList.add('active'), 10);
+                
+                document.getElementById('error-message').style.display = 'none';
+            });
+        });
+
+        function validateForm() {
+            const scenarios = document.querySelectorAll('input[name="scenario"]');
+            let selected = false;
+            
+            scenarios.forEach(scenario => {
+                if (scenario.checked) {
+                    selected = true;
+                }
+            });
+
+            if (!selected) {
+                const errorMessage = document.getElementById('error-message');
+                errorMessage.style.display = 'block';
+                errorMessage.scrollIntoView({ behavior: 'smooth' });
+                return false;
+            }
+            
+            return true;
+        }
+    </script>
+</body>
+</html>

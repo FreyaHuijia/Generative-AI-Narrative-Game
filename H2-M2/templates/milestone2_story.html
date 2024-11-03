@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whispers of Wonder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #1a1a1a;  /* 深色背景 */
+            color: #fff;  /* 文字改为白色 */
+        }
+        h1 {
+            color: #ffffff;  /* 改为纯白色 */
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);  /* 添加文字阴影增加可读性 */
+        }
+        #scene-image {
+            width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #story-container {
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);  /* 半透明白色背景 */
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            text-align: left;
+            box-sizing: border-box;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            line-height: 1.5;  
+            color: #000;  /* 故事文字保持黑色 */
+        }
+        .input-container {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin: 20px 0;
+            box-sizing: border-box;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            min-width: 0;
+            width: 100%;       
+            box-sizing: border-box;
+            overflow: visible;  
+            resize: vertical;  
+        }
+        .continue-button {
+            padding: 12px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            white-space: nowrap;
+            transition: background-color 0.3s ease;
+        }
+        .continue-button:hover {
+            background-color: #45a049;
+        }
+        .end-button-container {
+            margin-top: 30px;
+            text-align: center;
+            width: 100%;
+        }
+        .end-button {
+            padding: 12px 40px;
+            background-color: transparent;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .end-button:hover {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            z-index: 1000;
+            font-size: 18px;
+        }
+        canvas {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+    <h1>Whispers of Wonder</h1>
+    <img id="scene-image" src="{{ image_url }}" alt="Current Scene">
+    <div id="story-container">
+        {{ initial_story }}
+    </div>
+    <div id="loading" style="display: none;">
+        Exploring...
+    </div>
+    
+    <form id="adventure-form">
+        <div class="input-container">
+            <input type="hidden" name="scenario" value="{{ scenario }}">
+            <input type="text" 
+                   name="user_input" 
+                   placeholder="What do you want to do next?" 
+                   required 
+                   maxlength="200"> 
+            <button type="submit" class="continue-button">Continue</button>
+        </div>
+    </form>
+    
+    <div class="end-button-container">
+        <button class="end-button" onclick="endAdventure()">End Adventure</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function endAdventure() {
+            window.location.href = '/milestone2';
+        }
+        
+        $(document).ready(function() {
+            // 在页面加载时设置背景色
+            const scenario = document.querySelector('input[name="scenario"]').value;
+            const body = document.body;
+            
+            // 设置不同场景的背景色
+            switch(scenario) {
+                case 'forest':
+                    body.style.backgroundColor = '#1a2f1a';  // 深绿色
+                    break;
+                case 'canyon':
+                    body.style.backgroundColor = '#2b1f10';  // 深土黄色
+                    break;
+                case 'snow':
+                    body.style.backgroundColor = '#1a1a2f';  // 深蓝色
+                    break;
+                default:
+                    body.style.backgroundColor = '#1a1a1a';  // 默认深色
+            }
+            
+            $('#adventure-form').submit(function(e) {
+                e.preventDefault();
+                
+                $('#loading').show();
+                $('button[type="submit"]').prop('disabled', true);
+                
+                $.ajax({
+                    url: '/milestone2',
+                    type: 'POST',
+                    data: $(this).serialize(),
+                    success: function(response) {
+                        if (response.story) {
+                            const formattedStory = response.story.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                            $('#story-container').html(formattedStory);
+                        }
+                        if (response.image_url) {
+                            $('#scene-image').attr('src', response.image_url + '?t=' + new Date().getTime());
+                        }
+                        // 清空输入框并重置为默认提示文字
+                        $('input[name="user_input"]').val('').attr('placeholder', 'What do you want to do next?');
+                        
+                        // 更新背景色
+                        const scenario = document.querySelector('input[name="scenario"]').value;
+                        const body = document.body;
+                        switch(scenario) {
+                            case 'forest':
+                                body.style.backgroundColor = '#1a2f1a';  // 深绿色
+                                break;
+                            case 'canyon':
+                                body.style.backgroundColor = '#2b1f10';  // 深土黄色
+                                break;
+                            case 'snow':
+                                body.style.backgroundColor = '#1a1a2f';  // 深蓝色
+                                break;
+                        }
+                    },
+                    error: function() {
+                        $('#story-container').text('Error, please try again');
+                    },
+                    complete: function() {
+                        $('#loading').hide();
+                        $('button[type="submit"]').prop('disabled', false);
+                    }
+                });
+            });
+        });
+        
+        let particles = [];
+        const PARTICLE_COUNT = 200;  // 增加粒子数量
+
+        function setup() {
+            const canvas = createCanvas(windowWidth, windowHeight);
+            canvas.position(0, 0);
+            canvas.style('z-index', '-1');
+            
+            // 初始化更多粒子
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push({
+                    x: random(width),
+                    y: random(height),
+                    size: random(3, 6),  // 增加粒子大小
+                    speedX: random(-1, 1),
+                    speedY: random(-1, 1)
+                });
+            }
+        }
+
+        function draw() {
+            clear();
+            const scenario = document.querySelector('input[name="scenario"]').value;
+            
+            switch(scenario) {
+                case 'forest':
+                    drawForestParticles();
+                    break;
+                case 'canyon':
+                    drawCanyonParticles();
+                    break;
+                case 'snow':
+                    drawSnowParticles();
+                    break;
+            }
+        }
+
+        function drawForestParticles() {
+            // 增强萤火虫效果
+            particles.forEach(p => {
+                let alpha = map(sin(frameCount * 0.05 + p.x), -1, 1, 100, 255);  // 增加亮度
+                fill(255, 255, 150, alpha);
+                noStroke();
+                
+                // 添加光晕效果
+                let glowSize = p.size * 2;
+                for(let i = glowSize; i > 0; i--) {
+                    fill(255, 255, 150, alpha * (i/glowSize) * 0.5);
+                    circle(p.x, p.y, i);
+                }
+                
+                p.x += sin(frameCount * 0.01) * p.speedX;
+                p.y += cos(frameCount * 0.01) * p.speedY;
+                
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+            });
+        }
+
+        function drawCanyonParticles() {
+            // 增强沙尘效果
+            particles.forEach(p => {
+                let alpha = map(p.y, 0, height, 150, 255);  // 根据高度调整透明度
+                fill(255, 200, 150, alpha);
+                noStroke();
+                circle(p.x, p.y, p.size);
+                
+                p.x += p.speedX;
+                p.y += p.speedY * 0.5;
+                
+                if (p.y > height) {
+                    p.y = 0;
+                    p.x = random(width);
+                    p.speedY = random(0.5, 2);
+                }
+                if (p.x < 0 || p.x > width) {
+                    p.speedX *= -1;
+                }
+            });
+        }
+
+        function drawSnowParticles() {
+            // 简化的雪花效果，使用白色圆点
+            particles.forEach(p => {
+                // 增加不透明度和大小，使雪花更明显
+                fill(255, 255, 255, 200);  
+                noStroke();
+                circle(p.x, p.y, p.size * 1.5);  // 稍微增大雪花大小
+                
+                // 添加轻微的左右摆动
+                p.x += sin(frameCount * 0.02) * 0.5;
+                p.y += p.speedY;
+                
+                // 当雪花落到底部时，重置到顶部
+                if (p.y > height) {
+                    p.y = -10;
+                    p.x = random(width);
+                    p.speedY = random(1, 2);  // 降低速度使其看起来更自然
+                }
+            });
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+
+        // 添加文字淡入效果
+        function updateStoryWithAnimation(text) {
+            const storyContainer = document.getElementById('story-container');
+            storyContainer.style.opacity = 0;
+            
+            setTimeout(() => {
+                // 将 **text** 转换为 <strong>text</strong>
+                const formattedText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                storyContainer.innerHTML = formattedText;  // 使用 innerHTML 而不是 textContent
+                storyContainer.style.opacity = 1;
+            }, 300);
+        }
+    </script>
+</body>
+</html>
