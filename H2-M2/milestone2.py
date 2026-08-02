@@ -63,7 +63,7 @@ def extract_scene_description(story_continuation):
 
 def query(payload):
     API_URL = "https://api-inference.huggingface.co/models/aleksa-codes/flux-ghibsky-illustration"
-    headers = {"Authorization": "Bearer REDACTED_HF_TOKEN"}
+    headers = {"Authorization": f"Bearer {os.environ['HF_TOKEN']}"}
     response = requests.post(API_URL, headers=headers, json=payload)
     return response.content
 
